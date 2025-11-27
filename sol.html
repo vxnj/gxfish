@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sol</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="css/_main.css" />
+<link rel="stylesheet" href="css/sol.css" />
+
+<!-- <script src="js/funcs.js"></script> -->
+<script src="js/fDate.js"></script>
+
+<!-- <meta http-equiv="refresh" content="5" > -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="icon" type="image/x-icon" href="img/sol.ico">
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+
+// Get Url Parameter
+function gup (name) {
+    name = RegExp ('[?&]' + name.replace (/([[\]])/, '\\$1') + '=([^&#]*)');
+    return (window.location.href.match (name) || ['', ''])[1];
+}
+
+   
+function showpop(secs, id) {
+        document.getElementById(id).style.display = "block"
+        if (secs>0) { setTimeout(function(){document.getElementById(id).style.display = "none";}, secs*1000 || 3000); }
+    }
+
+// key = "da5f0d9ce3486ef93fd7ffb24235c9e3" 2.5
+
+key = "f9bf6c9a1dee26e187d865e32d60ab3a" // 3.0
+
+// Set reload timings ======================================================
+mins = 60000;
+myInt = setInterval(reloadit, 5*mins);
+let rel = 'on';
+stale = false;
+function xOn(){
+  rel = 'on';
+  if (stale) { 
+    reloadit();
+    clearInterval(myInt);
+    myInt = setInterval(reloadit, 15*mins);
+  }
+}
+window.addEventListener("blur",  function(){ rel = 'off';});
+window.addEventListener("focus", xOn);
+
+function reloadit() {
+  if (rel == 'on') {
+    //console.log('reload!! ' + date_format(new Date(), 'H:i:s'));
+    callwea();
+    stale = false;
+  } else {
+    stale = true;
+    //console.log('stale');
+  }
+}
+// =====================================================
+
+var xhr =  new XMLHttpRequest();
+var xhrz = new XMLHttpRequest();
+var xhrq = new XMLHttpRequest();
+paramzip = "10025";
+var tblhr ="";
+var state = ""
+var city = ""
+
+// Called whenever the readyState attribute changes 
+xhr.onreadystatechange = function() { // Check if fetch request is done
+    if (xhr.readyState == 4 && xhr.status == 200) { 
+        jsonData = JSON.parse(xhr.responseText);
+        getWea(jsonData);
+    }
+}
+xhrz.onreadystatechange = function() { // Check if fetch request is done
+    if (xhrz.readyState == 4 && xhrz.status == 200) { 
+        jsonZip = JSON.parse(xhrz.responseText);
+        getZip(jsonZip);
+    }
+}
+xhrq.onreadystatechange = function() { // Check if fetch request is done
+    if (xhrq.readyState == 4 && xhrq.status == 200) { 
+        jsonAqi = JSON.parse(xhrq.responseText);
+        getAqi(jsonAqi);
+    }
+}
+
+function init() {
+    paramzip = gup("zip") || "10025";
+    document.querySelector(".pop").style.backgroundImage = 'url("/img/weather/SkyDark.jpg")';
+    document.querySelector(".alrt").style.backgroundImage = 'url("/img/weather/SkyDark.jpg")';
+    callzip();
+}
+
+function callzip() {
+  url = "https://api.openweathermap.org/geo/1.0/zip?zip=" + paramzip + "&appid=" + key
+  xhrz.open("GET", url, true);
+  xhrz.send();
+
+  url = "https://www.airnowapi.org/aq/observation/zipCode/current/?format=application/json&zipCode=" + paramzip + "&distance=25&API_KEY=DF2D21FE-7DCA-44E1-A761-C161AA742213"
+  xhrq.open("GET", url, true);
+  xhrq.send();
+  }
+
+let lat;
+let lon;
+
+function getZip(dataz) {
+   document.getElementById("zipcd").innerHTML = dataz.name + " (" + dataz.zip + ")";
+   document.getElementById("linkddg").href =  "https://duckduckgo.com/?q=Weather+" + city + ', ' + state + ' ' + paramzip + " US&ia=weather";
+   lat = dataz.lat
+   lon = dataz.lon
+   city = dataz.name
+   callwea();
+}
+
+function getAqi(dataq) {
+   document.getElementById("aqi").innerHTML = "";
+   //console.log(dataq);
+   let vaqi, len, text; 
+   for (q = 0, len = dataq.length, vaqi="", maxq = 0, maxn = 0; q < len; q++) {
+        vaqi += dataq[q].ParameterName + ' ' + dataq[q].AQI + ' ' + dataq[q].Category.Name + + dataq[q].Category.Number +'<br>';
+        if (dataq[q].Category.Number > maxq) { maxq = dataq[q].Category.Number; }
+        if (dataq[q].AQI > maxn) { maxn = dataq[q].AQI; }
+        state = dataq[q].StateCode
+  }
+  document.getElementById("linkddg").href = "https://duckduckgo.com/?q=Weather+" + city + ', ' + state + ' ' + paramzip + " US&ia=weather";
+  
+ colq= '#7e0023';
+  //console.log(vaqi);
+  switch (maxq) {
+    case 1: colq = "#00e400"; break;
+    case 2: colq = "#ffff00"; break;
+    case 3: colq = "#ff7e00"; break;
+    case 4: colq = "#ff0000"; break;
+    case 5: colq = "#8f3f97"; break;
+    case 6: colq = "#7e0023"; break;
+}
+
+  //console.log('maxq ' + maxq);
+  document.getElementById("aqi").innerHTML = maxn ;
+  document.getElementById("aqi").style.backgroundColor=colq + '60';
+  document.getElementById("aqi").href= "https://www.airnow.gov/?city=" + city + "&state=" + state;
+  //console.log("https://www.airnow.gov/?zip=" + paramzip);
+}
+function callwea() {
+  // url = "https://api.openweathermap.org/data/2.5/onecall?lat=" + lat + "&lon=" + lon + "&units=imperial&exclude=minutely&appid=" + key;
+  url = "https://api.openweathermap.org/data/3.0/onecall?lat=" + lat + "&lon=" + lon + "&units=imperial&exclude=minutely&appid=" + key;
+
+  document.getElementById('linkjson').href = url
+  xhr.open("GET", url, true);
+  xhr.send();
+}
+
+tblhd= '<table class="table tblWide" id="mytbl"><thead><tr class="day">'
+      + '<th id="hdTdy">Today</th>'
+      + '<th id="hdTmp">Temp</th>'
+      + '<th id="hdHmd">Hmd</th>'
+      + '<th><span id="hdWea">Weather</span><span id="alert3" class="alerts" onclick="popAlert()">+</span><a id="alert2" class="alerts"></a></th>'
+    +'</tr></thead>';
+  
+
+mnnow = date_format(new Date, 'n');   //months 1-12
+
+function getWea(data) {  
+      myOffset = date_format(new Date(),'Z');  
+      zpOffset  = data.timezone_offset;
+      shift = zpOffset - myOffset;
+      dateVal = new Date((data.current.dt + shift) *1000);
+      dtnow = date_format(dateVal, 'g:i');
+      dynow = date_format(dateVal, 'D');
+      hrnow = date_format(dateVal, 'H');
+      tblhr = ""
+
+      vPop = (data.hourly[0].pop > .04) ? '<span class="precip"> ' 
+        + 100*numStd(data.hourly[0].pop, 1) + '%</span>':'';
+
+        vDesc = data.current.weather[0].description
+        vHdTdy = dynow; 
+        vHdTmp = parseInt(.5 + data.daily[0].temp.max)+ "-" +parseInt(.5 + data.daily[0].temp.min) + "°";
+        vHdHmd = data.daily[0].humidity + "%";
+
+
+      tblhr += "<tr>" 
+            + "  <td>" + dtnow + "</td>"
+            + '  <td class="hl"><b>' + parseInt(.5 + data.current.temp) + "°</b></td>"
+            + "  <td>" + data.current.humidity + "%" + "</td>"
+            + "  <td>" + geticon(data.current.weather[0].icon) + 
+                data.current.weather[0].description.replace("intensity ", "")  + vPop +"</td>"
+            + "</tr>";
+    
+    let txt = "";
+    for (let i = 1; i < 8; i++) {
+      var xd = new Date((data.hourly[i].dt+ shift)*1000);
+      dthr = date_format(xd, 'g a');
+
+      wee = date_format(xd, 'H');
+      if (wee < 7 && wee > 0 && hrnow > 6) {ix= i+7;} else {ix = i;}
+      var xd = new Date((data.hourly[ix].dt+ shift)*1000);
+      dthr = date_format(xd, 'g a');
+
+      vPop = (data.hourly[ix].pop > .04) ? '<span class="precip"> ' 
+        + 100*numStd(data.hourly[ix].pop, 1) + '%</span>':'';
+      
+      tblhr += "<tr>" 
+            + "  <td>" + dthr + "m</td>"
+            + "  <td>" + parseInt(.5 + data.hourly[ix].temp) + "°</td>"
+            + "  <td>" + data.hourly[ix].humidity + "%" + "</td>"
+            + "  <td>" + geticon(data.hourly[ix].weather[0].icon) + data.hourly[ix].weather[0].description.replace("intensity ", "") + vPop + "</td>"
+            + "</tr>";
+      }
+ 
+      
+      for (let j = 1; j < 7; j++) {
+        xd = new Date((data.daily[j].dt+ shift)*1000);
+        dthr = date_format(xd, 'D');
+
+        vPop = (data.daily[j].pop > .04) ? '<span class="precip"> ' 
+        + 100*numStd(data.daily[j].pop, 1) + '%</span>':'';
+  
+        tblhr += "<tr class='day'>" 
+              + "  <td>" + dthr + "</td>"
+              + "  <td>" + parseInt(.5 + data.daily[j].temp.max)+ "-" +parseInt(.5 + data.daily[j].temp.min) + "°</td>"
+              + "  <td>" + data.daily[j].humidity + "%" + "</td>"
+              + "  <td>" + geticon(data.daily[j].weather[0].icon) + data.daily[j].weather[0].description.replace("intensity ", "") + vPop + "</td>"
+              + "</tr>";
+      }
+   tblhr += "</tbody></table>";
+
+
+    function doAlert(){
+        if(data.hasOwnProperty('alerts')) {
+            alert = document.getElementById("alert3");
+            alert.innerHTML = data.alerts[0].event; 
+            alert.style.display = 'inline-block';
+            alert.style.cursor = 'pointer';
+            document.getElementById("hdWea").style.display = 'none';
+            vhref = "<a href = 'https://forecast.weather.gov/MapClick.php?lat=" + lat + "&lon=" + lon + "'>NOAA</a>" ;
+            
+            adesc = data.alerts[0].description
+            adesc = adesc.replace(/\*/g, "<hr>")
+            
+            document.getElementById("pop-alrt").innerHTML = data.alerts[0].event + '<br><hr><hr>' + adesc + '<br><hr><hr>' + vhref ;
+
+        } else {
+            alerts = ""
+            //document.getElementById('alerts').style.display = 'none';
+    }
+   }
+ 
+   
+   dateVal = new Date((data.daily[0].sunrise+ shift) *1000);
+   srise = date_format(dateVal, 'g:ia');
+   dateVal = new Date((data.daily[0].sunset + shift) *1000);
+   sset =  date_format(dateVal, 'g:ia');
+
+   dateVal = new Date((data.daily[0].moonrise+ shift) *1000);
+   mrise =  date_format(dateVal, 'g:ia');
+   dateVal = new Date((data.daily[0].moonset + shift) *1000);
+   mset =  date_format(dateVal, 'g:ia');
+
+
+   
+   document.getElementById("tblhr").innerHTML = "";
+   document.getElementById("tblhr").innerHTML = tblhd + tblhr;   
+   doAlert();
+
+   document.getElementById("sunbox").innerHTML = '<a style="text-decoration: none !important" href="https://www.swpc.noaa.gov/products/predicted-sunspot-number-and-radio-flux" target="blank"><img src="img/weather/Clear.svg" alt="Sunrise" class="weaicon"/>' + " " + srise  + " - " + sset + "</a>";
+   
+   document.getElementById("hdTdy").innerHTML = vHdTdy
+   document.getElementById("hdTmp").innerHTML = vHdTmp;
+   document.getElementById("hdHmd").innerHTML = vHdHmd;
+
+
+   moonpic = getmoon(data.daily[0].moon_phase);
+   document.getElementById("moonbox").innerHTML = moonpic.retFull + mrise  + " - " + mset + " " + moonpic.moon;
+
+ }
+
+document.addEventListener("click", (e) => {
+    if(e.srcElement.id != 'pop-moon' && e.srcElement.id != 'moonbox' && e.srcElement.id != 'Moon'  ) { 
+        document.getElementById('pop-moon').style.display='none'
+    };
+    console.log(e.srcElement.id);
+})
+
+window.onload = init;
+
+function chgzip() {
+  paramzip = prompt('Zip Code', paramzip || "10025");
+  if(paramzip || 'xx' != 'xx'){callzip();}
+}
+
+let pop;
+function popAlert() {
+    pop = document.getElementById('pop-alrt')
+    pop.style.display = 'block'; 
+}
+
+function themer () {
+    th = document.getElementById("themer").value;
+    switch (th) {
+      case 'dark': val = ['var(--dark-def)','var(--dark-day)','var(--dark-cur)','var(--dark-bkg)','url("img/weather/SkyDark.jpg")']; break;
+      case "mint": val = ['var(--mint-def)','var(--mint-day)','var(--mint-cur)','var(--mint-bkg)','url("img/weather/SkyMint.jpg")']; break;
+      case "pink": val = ['var(--pink-def)','var(--pink-day)','var(--pink-cur)','var(--pink-bkg)','url("img/weather/SkyPink.jpg")']; break;
+      case "bayj": val = ['var(--bayj-def)','var(--bayj-day)','var(--bayj-cur)','var(--bayj-bkg)','url("img/weather/SkyBeige.jpg")']; break;
+    }
+    
+
+    document.documentElement.style.setProperty('--live-def',val[0]);
+    document.documentElement.style.setProperty('--live-day',val[1]);
+    document.documentElement.style.setProperty('--live-cur',val[2]);
+    document.documentElement.style.setProperty('--live-bkg',val[3]);  
+    document.querySelector(".pop").style.backgroundImage =  val[4];
+    document.querySelector(".alrt").style.backgroundImage = val[4];
+
+    document.querySelector(".table").style.borderColor =  getComputedStyle(document.documentElement).getPropertyValue('--live-def') + '50 !imporatant';
+
+    newcol = (getComputedStyle(document.documentElement).getPropertyValue('--live-def') + '50');
+    document.documentElement.style.setProperty('--live-bor',newcol);
+    document.getElementById("mytbl").style.borderColor = newcol
+  
+  }
+
+function geticon(iconcd) {
+    switch(iconcd) {
+        case '01d':                   ico="Clear";break;
+        case '01n':                   ico="ClearNt";break;
+        case '02d': case '03d': case '04d': ico="Partly";break;
+        case '02n': case '03n': case '04n': ico="PartlyNt";break;
+        case '09d': case '10d': case '11d': case'50d': ico="Rain";break;
+        case '09n': case '10n': case '11n': case'50n': ico="Rain";break;
+        case '13d': case '13n':       ico="Snowy";break;
+        default:                      ico="?";
+    }
+    svg = '<img src="img/weather/' + ico + '.svg" alt="' + ico + '" class="weaicon"/>';
+    return svg
+}
+
+
+const phases =     ["Moon0New", "Moon1WxC", "Moon2WxQ", "Moon3WxG", "Moon4Ful", "Moon5WnG", "Moon6WnQ", "Moon7WnC", "Moon0New"];
+const phasesDesc = ["New Moon", "Waxing Crescent", "Waxing Quarter", "Waxing Gibbous", "Full Moon !!", "Waning Gibbous", "Waning Quarter", "Waning Crescent", "New Moon"];
+
+const moonNames =  ['0','Wolf', 'Snow', 'Worm', 'Pink', 'Flower', 'Strawberry', 'Buck', 'Sturgeon', 'Harvest', 'Hunters', 'Beaver', 'Cold'];
+const moonEmojis = ['0', '🐺','❄️', '🪱', '🌸', '🌻','🍓', '🦌','🐟','🌽','🏹', '🦫','🥶']
+
+
+urlMoon = 'https://www.timeanddate.com/astronomy/moon/' +  moonNames[mnnow].toLowerCase() + '.html';
+lnkMoon = '<a href="' + urlMoon + '" style="text-decoration: underline; color: var(--live-cur) !important;" target="blank"> ' + moonEmojis[mnnow] + ' ' + moonNames[mnnow] + ' Moon :)</a>';
+let moonInner;
+
+let ph;
+
+function getmoon(phase) {
+    var moonInner = '';  retFull = '';
+    ph = parseInt(8 * (phase + 1/16));
+    if (phases[ph]=='Moon4Ful') {
+        phasesDesc.splice(ph, 1, lnkMoon);
+        retFull= moonEmojis[mnnow]+ ' ';
+    }
+ 
+    moon = '<img src="img/weather/' + phases[ph] + '.svg" id="Moon" class="weaicon"/>';
+    for (let k = 0; k < 8; k++) {
+    moonInner += '<img src="img/weather/' + phases[k] + '.svg" alt="Moon" id="phimg' + k + '" style="filter:brightness(70%)" class="weaicon"/><span id="phdesc' + k + '">    ' +  phasesDesc[k] + "</span><br>";
+   } 
+
+    if (ph==8) { ph = 0 }
+    document.getElementById("pop-moon").innerHTML = moonInner;
+    document.getElementById("phdesc" + ph).style.color = 'var(--live-cur)';
+    document.getElementById("phimg" + ph).style.filter = "brightness(120%)"; 
+    return {retFull, moon};
+}
+</script>
+
+</head>
+<body>
+
+<table class="tblWide">
+  <tbody>
+  <tr>
+    <td><div id="zipcd" onclick="chgzip()"></div></td>
+    <td style="text-align: right !important"><select name="theme" id="themer" class="themedd" onchange="themer()">
+      <option value="dark" style="color: rgb(61, 114, 179);">Dark</option>
+      <option value="pink" style="color: rgb(170, 24, 151);">Pink</option>
+      <option value="mint" style="color: rgb(26, 145, 11);" >Mint</option>
+      <option value="bayj" style="color: rgb(148, 100, 27);">Beige</option>
+    </select>
+  </td>
+  </tr>
+  </tbody>
+</table>
+
+<!-- <a id="alerts" class="alerts" href="https://www.weather.gov/forecastmaps"></a> -->
+
+<div id="tblhr"></div>
+
+<table class="riseset tblWide">
+  <tbody>
+  <tr>
+  <td id="sunbox" ></td>
+  <td id="aqibox" ><a id="aqi" class="numball" href="https://www.airnow.gov/"></a></td>
+  <td id="moonbox" onclick="showpop(0,'pop-moon')" style="text-align: right; cursor: pointer"></td>
+  </tr>
+  </tbody>
+</table>
+
+<div class="pop" id="pop-moon" onclick="document.getElementById('pop-moon').style.display = 'none';"></div>
+<div class="pop alrt" id="pop-alrt" onclick="document.getElementById('pop-alrt').style.display = 'none';"></div>
+
+<span class="tblWide">
+
+    <a class="xbtn" id="linkddg" href="https://duckduckgo.com/?q=weather+upper+west+side%2C+Ny&t=ffsb&atb=v229-1&ia=weather" target="blank">ddg<a/>    
+    <a class="xbtn "id="linknws" style="float:unset;margin-right:0px" href="https://forecast.weather.gov/MapClick.php?CityName=New+York&state=NY&site=OKX" target="blank">nws<a/>
+    
+      <a class="xbtn xbtn-rt"id="linkjson" style="float:unset;margin-right:0px" href="https://api.openweathermap.org/data/3.0/onecall?lat=40.8&lon=-73.97&units=imperial&exclude=minutely&appid=da5f0d9ce3486ef93fd7ffb24235c9e3" target="blank">json<a/>
+
+
+</div>
+ 
+</body>
+</html>
