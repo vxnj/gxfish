@@ -164,3 +164,7 @@ a   {
 .xbtn-rt {
   margin-right:0; float:right; background-color: transparent;color:#5a7ddf83 !important
 }
+
+.xbtn-page {
+  margin-right:10px; color:rgb(148, 158, 248) !important
+}
