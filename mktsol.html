@@ -6,6 +6,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<style>
+  .sections {
+    display: flex;
+    gap: 1rem;
+  }
+  .sections > section {
+    flex: 1; /* equal widths */
+  }
+  @media (max-width: 768px) {
+    .sections { flex-direction: column; } /* stack on small screens */
+  }
+
+</style>
 
 <link rel="stylesheet" href="css/_main.css" />
 
@@ -119,9 +132,6 @@
 
 <!-- ----------------------------------------------------------------------------- -->
   <section id="section-two">
-     ...second section... 
-
-
 
 
 <meta charset="utf-8">
@@ -554,19 +564,7 @@ function getmoon(phase) {
 </div>
 
 
-  </section>
-
-
-.sections {
-  display: flex;
-  gap: 1rem;
-}
-.sections > section {
-  flex: 1; /* equal widths */
-}
-@media (max-width: 768px) {
-  .sections { flex-direction: column; } /* stack on small screens */
-}
+</section>
 
 
 
