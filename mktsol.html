@@ -10,8 +10,14 @@
 <link rel="stylesheet" href="css/_main.css" />
 
 <link rel="icon" type="image/x-icon" href="img/mkt.ico">
- 
 
+
+<!-- ----------------------------------------------------------------------------- -->
+<div class="sections">
+  <section id="section-one"> 
+
+    
+    
 <!-- TradingView Widget BEGIN -->
 <div class="tradingview-widget-container">
   <div class="tradingview-widget-container__widget"></div>
@@ -104,6 +110,16 @@
 </div>
 
 
+
+
+
+
+  </section>
+
+
+<!-- ----------------------------------------------------------------------------- -->
+  <section id="section-two">
+     ...second section... 
 
 
 
@@ -533,6 +549,25 @@ function getmoon(phase) {
     <a class="xbtn xbtn-rt"id="linkjson" style="float:unset;" href="https://api.openweathermap.org/data/3.0/onecall?lat=40.8&lon=-73.97&units=imperial&exclude=minutely&appid=da5f0d9ce3486ef93fd7ffb24235c9e3" target="blank">json<a/>
 
 </span>
+
+
+
+
+
+  </section>
+
+</div>
+.sections {
+  display: flex;
+  gap: 1rem;
+}
+.sections > section {
+  flex: 1; /* equal widths */
+}
+@media (max-width: 768px) {
+  .sections { flex-direction: column; } /* stack on small screens */
+}
+
 
 
 </body>
